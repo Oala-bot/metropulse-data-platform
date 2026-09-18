@@ -46,7 +46,12 @@ INTEGER_COLUMNS = [
 
 def write_quarantine(file: TextIO, rows: pd.DataFrame) -> None:
     if not rows.empty:
-        file.write(rows.to_json(orient="records", lines=True, date_format="iso", date_unit="us"))
+        rows = rows.replace({float("inf"): "Infinity", float("-inf"): "-Infinity"})
+        file.write(
+            rows.to_json(
+                orient="records", lines=True, date_format="iso", date_unit="us", double_precision=15
+            )
+        )
 
 
 def load_zones(connection: psycopg.Connection[Any], zones: list[Zone]) -> set[int]:

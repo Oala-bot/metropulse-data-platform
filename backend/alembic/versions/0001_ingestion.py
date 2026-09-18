@@ -83,7 +83,7 @@ def upgrade() -> None:
             payment_type smallint NOT NULL CHECK (payment_type BETWEEN 0 AND 6),
             passenger_count smallint CHECK (passenger_count BETWEEN 0 AND 9),
             rate_code smallint,
-            store_and_fwd_flag text,
+            store_and_fwd_flag text CHECK (store_and_fwd_flag IN ('Y','N')),
             trip_distance double precision NOT NULL CHECK (trip_distance BETWEEN 0 AND 1000),
             fare_amount numeric(12,2) NOT NULL CHECK (fare_amount BETWEEN 0 AND 10000),
             extra numeric(12,2) CHECK (extra BETWEEN 0 AND 10000),

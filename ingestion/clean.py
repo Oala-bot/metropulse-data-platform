@@ -77,6 +77,9 @@ def clean_batch(
         rules[f"invalid_{column}"] = frame[column].notna() & (
             ~frame[column].between(0, upper) | (frame[column] % 1 != 0)
         )
+    rules["invalid_store_and_fwd_flag"] = frame["store_and_fwd_flag"].notna() & ~frame[
+        "store_and_fwd_flag"
+    ].isin(["Y", "N"])
     rules["invalid_distance"] = ~frame["trip_distance"].between(0, 1000)
     for column in MONEY_COLUMNS:
         rules[f"invalid_{column}"] = frame[column].notna() & ~frame[column].between(0, 10000)

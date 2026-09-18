@@ -1,0 +1,39 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Frontend: Chrome (start npm dev first)",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend/src"
+    },
+    {
+      "name": "FastAPI (available in API milestone)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "backend.app.main:app",
+        "--reload"
+      ],
+      "jinja": true,
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "TLC downloader: January 2025",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "ingestion.download",
+      "args": [
+        "--year",
+        "2025",
+        "--month",
+        "1",
+        "--taxi-type",
+        "yellow"
+      ],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+[project]
+name = "metropulse-data-platform"
+version = "0.1.0"
+description = "NYC taxi analytics and demand forecasting — incremental portfolio project"
+requires-python = ">=3.12,<3.14"
+dependencies = ["httpx>=0.28,<0.29", "pyarrow>=19,<24"]
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "pytest-cov>=6,<8", "ruff>=0.11,<1", "mypy>=1.15,<2"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["ingestion"]
+
+[[tool.mypy.overrides]]
+module = ["pyarrow", "pyarrow.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["ingestion/tests"]
+addopts = "-ra"
+
+[tool.coverage.run]
+source = ["ingestion"]
+omit = ["ingestion/tests/*"]

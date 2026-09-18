@@ -1,0 +1,17 @@
+name: metropulse
+version: '1.0.0'
+config-version: 2
+profile: metropulse
+model-paths: [models]
+seed-paths: [seeds]
+clean-targets: [target, dbt_packages]
+models:
+  metropulse:
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: view
+    marts:
+      +materialized: table
+flags:
+  send_anonymous_usage_stats: false

@@ -1,4 +1,4 @@
-.PHONY: setup check frontend download profile db migrate load
+.PHONY: setup check frontend download profile db migrate load warehouse api
 setup:
 	uv sync --locked
 	npm --prefix frontend ci
@@ -22,3 +22,7 @@ migrate:
 	uv run alembic upgrade head
 load:
 	uv run python -m ingestion.load --year 2025 --month 1
+warehouse:
+	uv run python -m backend.app.database.warehouse
+api:
+	uv run uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000 --no-access-log

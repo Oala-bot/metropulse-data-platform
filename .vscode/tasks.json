@@ -12,6 +12,30 @@
       "type": "shell",
       "command": "npm --prefix frontend run dev",
       "problemMatcher": []
+    },
+    {
+      "label": "Database: start",
+      "type": "shell",
+      "command": "docker compose up -d --wait postgres",
+      "problemMatcher": []
+    },
+    {
+      "label": "Database: migrate",
+      "type": "shell",
+      "command": "uv run alembic upgrade head",
+      "problemMatcher": []
+    },
+    {
+      "label": "Warehouse: build",
+      "type": "shell",
+      "command": "uv run python -m backend.app.database.warehouse",
+      "problemMatcher": []
+    },
+    {
+      "label": "FastAPI: development",
+      "type": "shell",
+      "command": "uv run uvicorn backend.app.main:app --reload --no-access-log",
+      "problemMatcher": []
     }
   ]
 }

@@ -22,6 +22,18 @@
         "yellow"
       ],
       "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "FastAPI",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "backend.app.main:app",
+        "--reload",
+        "--no-access-log"
+      ],
+      "cwd": "${workspaceFolder}"
     }
   ]
 }

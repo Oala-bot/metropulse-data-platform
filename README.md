@@ -1,6 +1,6 @@
 # MetroPulse
 
-NYC Yellow Taxi analytics and demand forecasting. Downloads, validates, quarantines, and loads monthly trips into PostgreSQL. The API, analytics models, forecasts, and dashboard are still to be built.
+NYC Yellow Taxi analytics and demand forecasting. Monthly trips are validated, loaded into PostgreSQL, transformed with dbt, and served through FastAPI. The React dashboard, forecasting model, and Airflow orchestration are still to be built.
 
 ## Setup
 
@@ -9,35 +9,40 @@ Requires uv, Node.js 22.12+, and Docker Desktop running.
 ```bash
 uv sync --locked
 cp .env.example .env
-# Set a local password in POSTGRES_PASSWORD and DATABASE_URL.
+# Set POSTGRES_PASSWORD, the matching DATABASE_URL, and a random ADMIN_API_KEY.
 docker compose up -d --wait postgres
 uv run alembic upgrade head
-npm --prefix frontend ci
-npm --prefix frontend run dev
-```
-
-Frontend: http://localhost:5173. PostgreSQL listens only on localhost. `docker compose down` stops it without deleting data.
-
-## Load data
-
-Source: [NYC TLC](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page). Initial scope: January–March 2025.
-
-```bash
 uv run python -m ingestion.load --year 2025 --month 1
+uv run python -m backend.app.database.warehouse
+uv run uvicorn backend.app.main:app --reload --no-access-log
 ```
 
-Change `--month` to 2 or 3. The loader downloads missing files and zone lookups, reads `.env`, and commits a month atomically. `--file path.parquet` uses a local file; `--zones path.csv` uses a local zone lookup. Exact completed files are skipped; unique trip keys also prevent duplicate rows within and across loads. Concurrent loads are refused.
+If `.env` already exists, keep it. API: http://localhost:8000. Interactive API reference: http://localhost:8000/docs. `make api`, `make warehouse`, and `make check` are shortcuts. PostgreSQL is bound to localhost; `docker compose down` stops it without deleting data.
 
-Records with missing required values, unknown zones, invalid payment codes, out-of-month pickups, durations outside (0, 24 hours], distances outside [0, 1,000 miles], or monetary fields outside [0, $10,000] are quarantined. Negative charges may be genuine reversals; this project's analytics exclude them. Payment code `0` is a valid Flex Fare trip in the 2025 TLC dictionary. Missing passenger counts and optional charges stay null. These limits are project rules, not TLC guarantees.
+For the frontend starter page: `npm --prefix frontend ci`, then `npm --prefix frontend run dev`.
 
-`staging.trip` holds accepted trips; `load_batch` tracks counts and failures; `data_quality_result` tracks each rule. `rows_read = rows_accepted + rows_rejected + duplicate_rows` for successful batches. Quarantine JSONL files under `data/rejected/` retain source values, row numbers, and reasons; counts per rule can overlap. Failed loads commit no trips. A killed loader is marked failed when the next load starts.
+## Data
 
-Trip keys hash the normalized source fields (including timestamps, zones, and charges), excluding load metadata. Two legitimate trips with identical values can share a key. Source timestamps remain timezone-naive New York local time. Revised files append unseen keys; they do not overwrite previously accepted trips.
+Source: [NYC TLC](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page). Initial scope: January–March 2025. Change `--month` to load another month, then rebuild the warehouse.
 
-Raw data, quarantine files, generated profiles, and `.env` are Git-ignored. `make profile` profiles a downloaded January file. The standalone downloader still uses exported environment variables or CLI flags rather than reading `.env`.
+The loader reads `.env`; `--file path.parquet` and `--zones path.csv` use local inputs. Identical completed files are skipped. Unique trip keys prevent repeated rows; failed monthly loads commit no trips. Quarantine files under `data/rejected/` retain source values, row numbers, and reasons. Raw files and credentials are Git-ignored.
 
-## Checks
+Validation rejects missing required values, unknown zones, invalid payment codes, out-of-month pickups, durations outside (0, 24 hours], distances outside [0, 1,000 miles], and monetary fields outside [0, $10,000]. These are project rules. Negative charges may be genuine reversals, but are excluded here. Payment code `0` is Flex Fare. Missing passenger counts and optional charges stay null.
+
+Trip keys hash normalized source fields, excluding load metadata. Identical legitimate trips can share a key. Revised files append unseen keys rather than replacing old records. Times remain New York local time without timezone offsets.
+
+## API
 
 ```bash
-make check
+curl 'http://localhost:8000/api/v1/summary?start_date=2025-01-01&end_date=2025-01-31'
+curl 'http://localhost:8000/api/v1/zones/top?direction=pickup&limit=10'
+curl 'http://localhost:8000/api/v1/trends/hourly?zone_id=161&limit=24'
 ```
+
+Dates are inclusive and filter trip pickup time. `zone_id` filters pickup zones, except for zone rankings/details where it identifies the selected pickup or drop-off zone. Paginated routes return `items`, `total`, `limit`, and `offset`. Revenue means recorded total charges, not profit. Weighted averages use trip counts.
+
+Other routes: `/health`, `/api/v1/trends/daily`, `/api/v1/zones/{zone_id}`, `/api/v1/payment-types`, `/api/v1/forecasts`, `/api/v1/models/latest`, and `/api/v1/pipeline-runs[/{run_id}]`. Forecasts return an empty list and the latest model is null until training is implemented.
+
+`POST /api/v1/admin/ingest/{year}/{month}` requires `X-API-Key` matching `ADMIN_API_KEY`. It returns a run ID immediately; poll `/api/v1/pipeline-runs/{run_id}` for download, load, and warehouse status. Only one API ingestion runs at a time. Worker logs are in `logs/`. Failed or interrupted workers can be retried; stale runs are marked failed when a new request starts.
+
+Migrations own operational/staging tables and forecast storage. dbt owns the `analytics` dimensions, facts, and marts. No automated test suite is included.

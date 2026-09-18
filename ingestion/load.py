@@ -109,7 +109,7 @@ def load_month(
         try:
             # A process killed mid-load loses its lock and transaction, but keeps its audit row.
             connection.execute("""
-                UPDATE load_batch SET status='failed', finished_at=now(),
+                UPDATE load_batch SET status='failed', finished_at=clock_timestamp(),
                     failure_message='Previous loader exited before completing the transaction'
                 WHERE status='running'
             """)
@@ -132,7 +132,8 @@ def load_month(
                 ).fetchone()
                 if prior:
                     connection.execute(
-                        "UPDATE load_batch SET status='skipped',finished_at=now() WHERE id=%s",
+                        "UPDATE load_batch SET status='skipped',finished_at=clock_timestamp() "
+                        "WHERE id=%s",
                         (batch_id,),
                     )
                     return {
@@ -190,7 +191,8 @@ def load_month(
                         )
                     connection.execute(
                         """
-                        UPDATE load_batch SET status='succeeded',finished_at=now(),rows_read=%s,
+                        UPDATE load_batch SET status='succeeded',finished_at=clock_timestamp(),
+                        rows_read=%s,
                         rows_accepted=%s,rows_rejected=%s,duplicate_rows=%s,quarantine_path=%s
                         WHERE id=%s
                     """,
@@ -202,7 +204,8 @@ def load_month(
                 failure = failure_message(exc)
                 connection.execute(
                     """
-                    UPDATE load_batch SET status='failed',finished_at=now(),rows_read=%s,
+                    UPDATE load_batch SET status='failed',finished_at=clock_timestamp(),
+                        rows_read=%s,
                     rows_accepted=0,rows_rejected=%s,duplicate_rows=%s,
                     failure_message=%s,quarantine_path=%s WHERE id=%s
                 """,

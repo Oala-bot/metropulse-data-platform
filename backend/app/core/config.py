@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     tlc_base_url: str = "https://d37ci6vzurychx.cloudfront.net/trip-data"
     raw_data_dir: Path = Path("data/raw")
     rejected_data_dir: Path = Path("data/rejected")
+    admin_api_key: SecretStr | None = None
+    cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
     ingestion_batch_size: int = Field(default=50_000, ge=1, le=250_000)
 
     @field_validator("database_url")

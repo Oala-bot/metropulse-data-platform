@@ -26,7 +26,6 @@
     "**/node_modules": true,
     "**/dist": true,
     "**/__pycache__": true,
-    "**/.pytest_cache": true,
     "**/.mypy_cache": true,
     "**/.ruff_cache": true,
     "data/raw": true,

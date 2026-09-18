@@ -1,5 +1,3 @@
-"""Profile a full monthly Parquet file in bounded batches without cleaning it."""
-
 import argparse
 import json
 from pathlib import Path
@@ -10,7 +8,6 @@ import pyarrow.parquet as pq
 
 
 def profile(path: Path) -> dict[str, Any]:
-    """Summarize schema, nulls, and observed ranges across every record."""
     parquet = pq.ParquetFile(path)
     nulls = dict.fromkeys(parquet.schema_arrow.names, 0)
     ranges: dict[str, dict[str, Any]] = {}
@@ -52,8 +49,7 @@ def profile(path: Path) -> dict[str, Any]:
 
 
 def main() -> None:
-    """Write a small reproducible JSON report instead of committing raw data."""
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description="Profile a monthly TLC Parquet file.")
     parser.add_argument("path", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()

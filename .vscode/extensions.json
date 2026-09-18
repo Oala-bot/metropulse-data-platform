@@ -3,11 +3,7 @@
     "ms-python.python",
     "ms-python.vscode-pylance",
     "charliermarsh.ruff",
-    "ms-azuretools.vscode-docker",
     "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode",
-    "ms-ossdata.vscode-pgsql",
-    "github.vscode-github-actions",
-    "innoverio.vscode-dbt-power-user"
+    "esbenp.prettier-vscode"
   ]
 }

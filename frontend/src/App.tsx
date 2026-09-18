@@ -40,8 +40,8 @@ export default function App() {
           <p className={styles.number}>02 / FOUNDATION</p>
           <h2>Reliable from the first byte.</h2>
           <p>
-            A streaming downloader with checksums, retries, and tests
-            establishes a reproducible starting point.
+            A streaming downloader with checksums and retries establishes a
+            reproducible starting point.
           </p>
         </article>
         <article>

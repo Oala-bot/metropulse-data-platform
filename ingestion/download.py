@@ -1,5 +1,3 @@
-"""Stream official Yellow Taxi files with atomic replacement and local integrity checks."""
-
 import argparse
 import hashlib
 import json
@@ -21,8 +19,6 @@ CHUNK_SIZE = 1024 * 1024
 
 @dataclass(frozen=True)
 class DownloadResult:
-    """Audit information for a completed or verified existing download."""
-
     source: str
     destination: str
     byte_count: int
@@ -32,7 +28,6 @@ class DownloadResult:
 
 
 def source_url(year: int, month: int, taxi_type: str = "yellow", base_url: str = BASE_URL) -> str:
-    """Validate the supported dataset and construct its official monthly URL."""
     if not 2009 <= year <= datetime.now(UTC).year:
         raise ValueError("year must be between 2009 and the current year")
     if not 1 <= month <= 12:
@@ -46,7 +41,6 @@ def source_url(year: int, month: int, taxi_type: str = "yellow", base_url: str =
 
 
 def checksum(path: Path) -> str:
-    """Compute SHA-256 without reading the entire file into memory."""
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for block in iter(lambda: handle.read(CHUNK_SIZE), b""):
@@ -70,7 +64,6 @@ def _matching_manifest(path: Path, source: str) -> dict[str, Any] | None:
 
 
 def _save_manifest(path: Path, result: DownloadResult) -> None:
-    """Replace the sidecar atomically; an interrupted pair will be re-downloaded."""
     temporary: Path | None = None
     try:
         with tempfile.NamedTemporaryFile(
@@ -97,18 +90,14 @@ def download(
     backoff_seconds: float = 1.0,
     client: httpx.Client | None = None,
 ) -> DownloadResult:
-    """Download with bounded retries; a failed attempt never replaces a good file.
-
-    A skip verifies the local checksum and source URL, not upstream immutability.
-    Use force to retrieve a source that TLC may have revised since the last download.
-    Callers must serialize writes to the same month (Airflow will enforce this later).
-    """
+    # Same-month downloads must be serialized by the caller.
     source = source_url(year, month, taxi_type, base_url)
     if attempts < 1 or backoff_seconds < 0:
         raise ValueError("attempts must be positive and backoff_seconds nonnegative")
     start = time.monotonic()
     output_dir.mkdir(parents=True, exist_ok=True)
     destination = output_dir / f"{taxi_type}_tripdata_{year:04d}-{month:02d}.parquet"
+    # Local checksums cannot detect upstream revisions; use --force to refresh.
     existing = None if force else _matching_manifest(destination, source)
     if existing:
         result = DownloadResult(
@@ -174,12 +163,11 @@ def download(
     finally:
         if owns_client:
             session.close()
-    raise RuntimeError("download exhausted attempts")  # pragma: no cover
+    raise RuntimeError("download exhausted attempts")
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Run the downloader CLI with nonzero exit status on failure."""
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description="Download NYC TLC Yellow Taxi records.")
     parser.add_argument("--year", required=True, type=int)
     parser.add_argument("--month", required=True, type=int)
     parser.add_argument("--taxi-type", default="yellow")
